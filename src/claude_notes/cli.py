@@ -90,15 +90,99 @@ def encode_project_path(path: str) -> str:
     return "-" + path.replace("/", "-")
 
 
+def is_safe_char(char: str) -> bool:
+    """Check if a character is safe (doesn't need encoding)."""
+    # Safe characters: ASCII alphanumeric and dash only
+    # Non-ASCII characters (accented letters, emoji, etc.) are unsafe
+    return char.isascii() and (char.isalnum() or char == "-")
+
+
+def fuzzy_match_encoded_names(our_encoding: str, claude_encoding: str) -> tuple[bool, int]:
+    """
+    Check if our encoding matches Claude's encoding with fuzzy matching.
+
+    Returns (matches, unknown_count) where:
+    - matches: True if the encodings match (allowing unsafe chars to match dashes)
+    - unknown_count: Number of characters that had to fuzzy-match (lower is better)
+
+    Fuzzy matching rules:
+    - Safe characters (alphanumeric, dash) must match exactly
+    - Unsafe characters in our encoding can match dashes in Claude's encoding
+    - Each unsafe→dash match increments the unknown count
+    """
+    if len(our_encoding) != len(claude_encoding):
+        return (False, 0)
+
+    unknown_count = 0
+
+    for our_char, claude_char in zip(our_encoding, claude_encoding):
+        if our_char == claude_char:
+            # Exact match - always good
+            continue
+        elif is_safe_char(our_char) and is_safe_char(claude_char):
+            # Both are safe but different - no match
+            return (False, 0)
+        elif not is_safe_char(our_char) and claude_char == "-":
+            # Unsafe character in ours matches dash in Claude's - fuzzy match
+            unknown_count += 1
+        else:
+            # Other mismatch - no match
+            return (False, 0)
+
+    return (True, unknown_count)
+
+
+def fuzzy_match_project(project_path: Path) -> Path | None:
+    """
+    Find the Claude project folder using fuzzy matching.
+
+    This handles cases where the original path contains:
+    - Underscores
+    - Non-ASCII characters (accented letters, emoji, etc.)
+    - Special characters
+
+    These characters get converted to dashes by Claude, but our naive encoding
+    keeps them as-is, so we need fuzzy matching.
+
+    Returns the best matching project folder, preferring matches with fewer
+    "unknown" character conversions.
+    """
+    projects_dir = get_claude_projects_dir()
+
+    # First try exact match (fast path for common case)
+    encoded_name = encode_project_path(str(project_path))
+    exact_match = projects_dir / encoded_name
+    if exact_match.exists() and exact_match.is_dir():
+        return exact_match
+
+    # Exact match failed, try fuzzy matching
+    if not projects_dir.exists():
+        return None
+
+    # Collect all potential matches with their unknown counts
+    matches: list[tuple[Path, int]] = []
+
+    for project_folder in projects_dir.iterdir():
+        if not (project_folder.is_dir() and project_folder.name.startswith("-")):
+            continue
+
+        is_match, unknown_count = fuzzy_match_encoded_names(encoded_name, project_folder.name)
+
+        if is_match:
+            matches.append((project_folder, unknown_count))
+
+    if not matches:
+        return None
+
+    # Sort by unknown count (prefer fewer unknowns) and return the best match
+    matches.sort(key=lambda x: x[1])
+    return matches[0][0]
+
+
 def find_project_folder(project_path: Path) -> Path | None:
     """Find the Claude project folder for a given project path."""
-    projects_dir = get_claude_projects_dir()
-    encoded_name = encode_project_path(str(project_path))
-    project_folder = projects_dir / encoded_name
-
-    if project_folder.exists() and project_folder.is_dir():
-        return project_folder
-    return None
+    # Use fuzzy matching to handle special characters
+    return fuzzy_match_project(project_path)
 
 
 def parse_start_time(time_str: str) -> datetime | None:
