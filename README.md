@@ -25,6 +25,7 @@ https://github.com/user-attachments/assets/e4cb9404-bdee-4a12-8e06-e1e2216b9165
 - HTML export with navigation, timestamps, and professional styling
 - Interactive pager for browsing long conversations
 - Project discovery - automatically finds Claude projects
+- **Smart project matching** - works with paths containing underscores, spaces, non-ASCII characters, and special characters
 - Humanized timestamps - shows "2 hours ago" instead of raw timestamps
 - Tool result formatting - properly displays Bash, Read, Edit, MultiEdit, and Grep tool usage
 - Navigation links - jump to specific messages in HTML output
@@ -79,10 +80,11 @@ The HTML output includes:
 Claude Code stores conversation transcripts as JSONL files in `~/.claude/projects/`. Each line represents a message, tool use, or tool result. Claude Notes:
 
 1. Discovers Claude projects by scanning the projects directory
-2. Parses JSONL transcript files 
-3. Groups related messages by role continuity
-4. Formats tool usage and results appropriately
-5. Outputs in your chosen format (terminal or HTML)
+2. Matches project paths (handles special characters automatically)
+3. Parses JSONL transcript files
+4. Groups related messages by role continuity
+5. Formats tool usage and results appropriately
+6. Outputs in your chosen format (terminal or HTML)
 
 ## Contributing
 
