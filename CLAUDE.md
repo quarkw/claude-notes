@@ -88,11 +88,12 @@ The project will be organized as follows:
 
 The tool processes Claude Code transcript JSONL files which contain conversation data. Key components:
 
-1. **JSONL Parser**: Reads and parses Claude Code transcript files
-2. **Formatters**: Transform parsed data into different output formats
+1. **Project Matching**: Fuzzy matching algorithm that handles paths with special characters (underscores, spaces, non-ASCII chars) by allowing unsafe characters to match the dashes Claude uses in encoded folder names
+2. **JSONL Parser**: Reads and parses Claude Code transcript files
+3. **Formatters**: Transform parsed data into different output formats
    - Terminal formatter: Rich text output for terminal viewing
    - HTML formatter: Generates standalone HTML files
-3. **CLI Interface**: Provides commands for different output options
+4. **CLI Interface**: Provides commands for different output options
 
 ## Input/Output
 
