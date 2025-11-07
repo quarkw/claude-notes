@@ -253,18 +253,22 @@ def order_messages(messages: list, message_order: str) -> list:
 
 @cli.command()
 @click.argument("path", type=click.Path(exists=True, path_type=Path), default=".")
-@click.option("--raw", is_flag=True, help="Show raw JSON data instead of formatted view")
-@click.option("--no-pager", is_flag=True, help="Disable pager and show all content at once")
-@click.option("--format", type=click.Choice(["terminal", "html", "animated"]), default="terminal", help="Output format")
-@click.option("--output", type=click.Path(), help="Output file (HTML/GIF/MP4/cast format)")
+@click.option("--raw", "-r", is_flag=True, help="Show raw JSON data instead of formatted view")
+@click.option("--no-pager", "-n", is_flag=True, help="Disable pager and show all content at once")
+@click.option(
+    "--format", "-f", type=click.Choice(["terminal", "html", "animated"]), default="terminal", help="Output format"
+)
+@click.option("--output", "-o", type=click.Path(), help="Output file (HTML/GIF/MP4/cast format)")
 @click.option(
     "--session-order",
+    "-s",
     type=click.Choice(["asc", "desc"]),
     default="desc",
     help="Order sessions by timestamp (asc=oldest first, desc=newest first)",
 )
 @click.option(
     "--message-order",
+    "-m",
     type=click.Choice(["asc", "desc"]),
     default="desc",
     help="Order messages within sessions (asc=oldest first, desc=newest first)",
@@ -285,18 +289,21 @@ def order_messages(messages: list, message_order: str) -> list:
     help="Replace emoji with text fallbacks for better GIF compatibility (animated format)",
 )
 @click.option(
-    "--trim-warmup/--no-trim-warmup",
-    default=True,
-    help="Remove Claude's initial warmup messages from conversations",
+    "--no-trim-warmup",
+    is_flag=True,
+    default=False,
+    help="Keep Claude's initial warmup messages in conversations",
 )
 @click.option(
     "--min-messages",
+    "-M",
     type=int,
     default=1,
     help="Minimum number of messages to include a conversation, after preprocessing (1 = include all)",
 )
 @click.option(
     "--past",
+    "-p",
     type=click.Choice(["hour", "day", "week", "month", "year"]),
     help="Show only conversations from the specified time period",
 )
@@ -315,7 +322,7 @@ def show(
     rows: int,
     max_duration: float | None,
     emoji_fallbacks: bool,
-    trim_warmup: bool,
+    no_trim_warmup: bool,
     min_messages: int,
     past: str | None,
 ):
@@ -356,7 +363,8 @@ def show(
         try:
             parser = TranscriptParser(jsonl_file)
 
-            # Get messages (with or without warmup)
+            # Get messages (with or without warmup) - default is to trim
+            trim_warmup = not no_trim_warmup
             if trim_warmup:
                 messages = parser.get_messages_without_warmup()
             else:
