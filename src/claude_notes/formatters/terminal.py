@@ -10,6 +10,35 @@ from claude_notes.formatters.base import BaseFormatter
 from claude_notes.formatters.tools import format_tool_use
 
 
+def escape_rich_markup(text: str) -> str:
+    """Escape Rich markup characters to prevent interpretation.
+
+    Escapes square brackets that could be interpreted as Rich markup tags.
+    Does not escape markdown-style links [text](url).
+    """
+    # Don't escape markdown links [text](url)
+    # Use a regex to escape [ and ] that aren't part of markdown links
+
+    # First, protect markdown links by replacing them temporarily
+    markdown_link_pattern = r"\[([^\]]+)\]\(([^\)]+)\)"
+    links = []
+
+    def protect_link(match):
+        links.append(match.group(0))
+        return f"__MDLINK_{len(links) - 1}__"
+
+    text = re.sub(markdown_link_pattern, protect_link, text)
+
+    # Now escape remaining square brackets
+    text = text.replace("[", r"\[").replace("]", r"\]")
+
+    # Restore markdown links
+    for i, link in enumerate(links):
+        text = text.replace(f"__MDLINK_{i}__", link)
+
+    return text
+
+
 class TerminalFormatter(BaseFormatter):
     """Format Claude conversations for terminal display."""
 
@@ -174,7 +203,10 @@ class TerminalFormatter(BaseFormatter):
             self.console.print(content)
 
     def _format_text_content(self, content: str) -> str:
-        return "\n[bold white]⏺[/bold white] " + content.strip() if content.strip() else ""
+        if content.strip():
+            escaped_content = escape_rich_markup(content.strip())
+            return "\n[bold white]⏺[/bold white] " + escaped_content
+        return ""
 
     def _format_tool_use(self, tool_use: dict[str, Any], msg: dict[str, Any]) -> str:
         """Format a tool use block with its result."""
