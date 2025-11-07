@@ -56,6 +56,27 @@ uv run claude-notes show . --no-pager
 # Show raw JSON data
 uv run claude-notes show . --raw
 
+# Show transcripts with warmup removed (default)
+uv run claude-notes show . --trim-warmup
+
+# Keep warmup messages
+uv run claude-notes show . --no-trim-warmup
+
+# Show only conversations with 15+ messages
+uv run claude-notes show . --min-messages 15
+
+# Show conversations from last week
+uv run claude-notes show . --time-range week
+
+# Show conversations from last month
+uv run claude-notes show . --time-range month
+
+# Show conversations from last year
+uv run claude-notes show . --time-range year
+
+# Combine filters: recent long conversations without warmup
+uv run claude-notes show . --trim-warmup --min-messages 20 --time-range month
+
 # Run with uvx (after publishing)
 uvx claude-notes show .
 ```
