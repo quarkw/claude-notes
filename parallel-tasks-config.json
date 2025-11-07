@@ -1,0 +1,51 @@
+{
+  "workspaces_dir": ".workspaces",
+  "system_prompt_template": "WORKSPACE: ${workspace}\n\nYou must work exclusively in the workspace directory above.\n\nIMPORTANT REQUIREMENTS:\n1. cd to ${workspace} before starting any work\n2. Verify you're in the correct workspace with: jj workspace list\n3. Work within your designated domain: ${domain}\n4. Complete all tasks in your track thoroughly and independently\n5. Write tests BEFORE implementing features (TDD)\n6. Run tests after each implementation\n7. Commit after each logical step with proper commit messages\n8. Do NOT access files outside your workspace\n9. Follow the detailed task instructions from the plan\n\n--- TRACK INSTRUCTIONS ---\n",
+  "plan_context": {
+    "description": "Analyze claude-notes project context",
+    "files": [
+      "CLAUDE.md",
+      "docs/plans/2025-11-06-bug-fix-and-features.md",
+      "src/claude_notes/cli.py",
+      "src/claude_notes/parser.py",
+      "src/claude_notes/formatters/terminal.py",
+      "src/claude_notes/formatters/html.py",
+      "pyproject.toml"
+    ],
+    "goal": "Prepare comprehensive context for implementing bug fixes and features across four parallel tracks: Rich markup escaping fix, warmup detection & filtering, date display, and time-based filtering",
+    "analysis": [
+      "Project structure and architecture (CLI, parser, formatters layers)",
+      "Testing approach and patterns used in the project",
+      "Code style and commit message conventions",
+      "Dependencies and tool usage (uv, pytest, Click, Rich)",
+      "How the four tracks interact and their boundaries"
+    ]
+  },
+  "tasks": [
+    {
+      "workspace_name": "track1-bug-fix",
+      "description": "Fix Rich markup escaping bug",
+      "domain": "src/claude_notes/formatters/terminal.py, tests/test_markup_escaping.py",
+      "instructions": "TRACK 1: Bug Fix - Rich Markup Escaping (CRITICAL PRIORITY)\n\nExecute ALL tasks from Track 1 in the plan:\n\nTask 1.1: Write failing test for markup escaping\n- Create tests/test_markup_escaping.py with test_file_path_with_brackets_does_not_crash() and test_markdown_links_still_work()\n- Run test to verify it fails: uv run pytest tests/test_markup_escaping.py -v\n- Commit the failing test with message: test(terminal): add failing test for Rich markup escaping\n\nTask 1.2: Implement Rich markup escaping\n- Add escape_rich_markup() function to terminal.py\n- Apply escaping in _display_message_group method\n- Run tests to verify fix: uv run pytest tests/test_markup_escaping.py -v\n- Run full test suite: make test\n- Commit the fix with message: fix(terminal): escape Rich markup in file paths\n\nFollow TDD: Write test first, verify it fails, implement, verify it passes.\nUse commit format: type(scope): description"
+    },
+    {
+      "workspace_name": "track2-warmup-filtering",
+      "description": "Add warmup detection & filtering",
+      "domain": "src/claude_notes/parser.py, tests/test_warmup_detection.py, src/claude_notes/cli.py (filtering integration)",
+      "instructions": "TRACK 2: Warmup Detection & Filtering\n\nExecute ALL tasks from Track 2 in the plan:\n\nTask 2.1: Write tests for warmup detection (tests/test_warmup_detection.py)\n- test_detect_simple_warmup(), test_no_warmup_in_conversation(), test_empty_messages()\n- Verify failure, commit: test(parser): add failing tests for warmup detection\n\nTask 2.2: Implement warmup detection (parser.py)\n- Add detect_warmup_end() function\n- Add get_messages_without_warmup() method to TranscriptParser\n- Run tests, commit: feat(parser): add warmup detection and trimming\n\nTask 2.3: Write tests for short chat filtering (test_warmup_detection.py)\n- Add test_filter_short_conversations_default(), test_filter_respects_custom_threshold(), test_filter_handles_empty()\n- Verify failure, commit: test(parser): add failing tests for short chat filtering\n\nTask 2.4: Implement short chat filtering (parser.py)\n- Add should_include_conversation() function\n- Run tests, commit: feat(parser): add short conversation filtering\n\nTask 2.5: Integrate filtering into CLI (cli.py)\n- Add --trim-warmup and --min-messages CLI options\n- Apply filtering in conversation loading (lines 288-313 area)\n- Test manually, commit: feat(cli): integrate warmup trimming and message filtering\n\nFollow TDD for each task."
+    },
+    {
+      "workspace_name": "track3-date-display",
+      "description": "Add date display to formatters",
+      "domain": "src/claude_notes/formatters/terminal.py, src/claude_notes/formatters/html.py, tests/test_date_display.py",
+      "instructions": "TRACK 3: Date Display\n\nExecute ALL tasks from Track 3 in the plan:\n\nTask 3.1: Write tests for date display (tests/test_date_display.py)\n- test_date_appears_in_conversation_output(), test_missing_date_handled_gracefully()\n- Verify tests run, commit: test(formatter): add tests for date display in conversations\n\nTask 3.2: Implement date display in terminal formatter (terminal.py)\n- Update _display_header method (around lines 46-49) to show formatted start date\n- Run tests: uv run pytest tests/test_date_display.py -v\n- Test manually: uv run claude-notes show .\n- Commit: feat(formatter): display session start date in terminal output\n\nTask 3.3: Add date display to HTML formatter (html.py)\n- Find HTML header generation location\n- Add date display in conversation headers\n- Test HTML output: uv run claude-notes show . --format html --output test-output.html\n- Commit: feat(formatter): display session date in HTML output\n\nFollow TDD approach."
+    },
+    {
+      "workspace_name": "track4-time-filtering",
+      "description": "Add time-based filtering CLI options",
+      "domain": "src/claude_notes/cli.py, tests/test_time_filtering.py",
+      "instructions": "TRACK 4: Time-based Filtering\n\nExecute ALL tasks from Track 4 in the plan:\n\nTask 4.1: Write tests for time filtering (tests/test_time_filtering.py)\n- test_filter_last_week(), test_filter_last_month(), test_filter_last_year(), test_filter_none_returns_all(), test_filter_handles_missing_timestamps()\n- Verify failure, commit: test(cli): add failing tests for time-based filtering\n\nTask 4.2: Implement time filtering function (cli.py)\n- Add filter_by_time_range() function after parse_start_time\n- Add timedelta import\n- Run tests: uv run pytest tests/test_time_filtering.py -v\n- Commit: feat(cli): add time-based filtering function\n\nTask 4.3: Add CLI options for time filtering (cli.py)\n- Add --time-range CLI option\n- Update show() function signature\n- Apply time filtering after sorting (around lines 315-320)\n- Test manually: uv run claude-notes show . --time-range week\n- Commit: feat(cli): add --time-range flag for filtering by date\n\nFollow TDD approach."
+    }
+  ],
+  "model": "sonnet"
+}
