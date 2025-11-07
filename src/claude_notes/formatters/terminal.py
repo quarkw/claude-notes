@@ -74,9 +74,22 @@ class TerminalFormatter(BaseFormatter):
         return format_tool_use(tool_name, tool_use, tool_result)
 
     def _display_header(self, info: dict[str, Any]) -> None:
-        """Display conversation header."""
-        # Don't display any header - just start with the conversation content
-        pass
+        """Display conversation header with start date."""
+        # Format start time if available
+        start_time_str = info.get("start_time")
+        if start_time_str:
+            from datetime import datetime
+
+            try:
+                # Parse ISO format
+                dt = datetime.fromisoformat(start_time_str.replace("Z", "+00:00"))
+                # Format as readable date
+                date_display = dt.strftime("%Y-%m-%d %H:%M:%S")
+                self.console.print(f"[dim]Session: {date_display}[/dim]")
+                self.console.print()  # Blank line after header
+            except (ValueError, AttributeError):
+                # If parsing fails, show raw or skip
+                pass
 
     def _display_message_group(self, messages: list[dict[str, Any]]) -> None:
         """Display a group of messages from the same role."""

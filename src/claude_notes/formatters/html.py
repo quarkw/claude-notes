@@ -69,7 +69,14 @@ class HTMLFormatter(BaseFormatter):
             html_parts.append('<div class="conversation-header">')
             html_parts.append(f'<h2 id="conv-{conversation_id}">Conversation {conversation_id}</h2>')
             if conversation_info.get("start_time"):
-                html_parts.append(f'<div class="timestamp">{conversation_info["start_time"]}</div>')
+                from datetime import datetime
+
+                try:
+                    dt = datetime.fromisoformat(conversation_info["start_time"].replace("Z", "+00:00"))
+                    date_str = dt.strftime("%B %d, %Y at %H:%M")
+                    html_parts.append(f'<div class="timestamp">{date_str}</div>')
+                except (ValueError, AttributeError):
+                    pass
             html_parts.append("</div>")
 
         # Display each group with headings and anchors
