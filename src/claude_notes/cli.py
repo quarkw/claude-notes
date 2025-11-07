@@ -115,7 +115,7 @@ def fuzzy_match_encoded_names(our_encoding: str, claude_encoding: str) -> tuple[
 
     unknown_count = 0
 
-    for our_char, claude_char in zip(our_encoding, claude_encoding):
+    for our_char, claude_char in zip(our_encoding, claude_encoding, strict=False):
         if our_char == claude_char:
             # Exact match - always good
             continue
@@ -240,6 +240,17 @@ def order_messages(messages: list, message_order: str) -> list:
     is_flag=True,
     help="Replace emoji with text fallbacks for better GIF compatibility (animated format)",
 )
+@click.option(
+    "--trim-warmup/--no-trim-warmup",
+    default=True,
+    help="Remove Claude's initial warmup messages from conversations",
+)
+@click.option(
+    "--min-messages",
+    type=int,
+    default=1,
+    help="Minimum number of messages to include a conversation, after preprocessing (1 = include all)",
+)
 def show(
     path: Path,
     raw: bool,
@@ -255,6 +266,8 @@ def show(
     rows: int,
     max_duration: float | None,
     emoji_fallbacks: bool,
+    trim_warmup: bool,
+    min_messages: int,
 ):
     """Show all conversations for a Claude project.
 
@@ -286,12 +299,26 @@ def show(
     # No header output - just start with the conversation
 
     # Load all conversations
+    from claude_notes.parser import should_include_conversation
+
     conversations = []
     for jsonl_file in jsonl_files:
         try:
             parser = TranscriptParser(jsonl_file)
+
+            # Get messages (with or without warmup)
+            if trim_warmup:
+                messages = parser.get_messages_without_warmup()
+            else:
+                messages = parser.get_messages()
+
+            # Apply minimum message filter
+            if min_messages > 0 and not should_include_conversation(
+                messages, min_messages=min_messages, trim_warmup=trim_warmup
+            ):
+                continue  # Skip this conversation
+
             info = parser.get_conversation_info()
-            messages = parser.get_messages()
 
             # Get the start timestamp for sorting (convert to UTC)
             start_time = parse_start_time(info.get("start_time", ""))

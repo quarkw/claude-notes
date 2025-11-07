@@ -1,7 +1,5 @@
 """Tests for fuzzy project matching logic."""
 
-import pytest
-
 from claude_notes.cli import fuzzy_match_encoded_names, is_safe_char
 
 
@@ -82,14 +80,10 @@ class TestFuzzyMatchEncodedNames:
 
     def test_different_lengths_no_match(self):
         """Test that different length encodings don't match."""
-        matches, _unknown = fuzzy_match_encoded_names(
-            "-tmp-test-project", "-tmp-test-project-extra"
-        )
+        matches, _unknown = fuzzy_match_encoded_names("-tmp-test-project", "-tmp-test-project-extra")
         assert not matches
 
     def test_different_safe_chars_no_match(self):
         """Test that different safe characters don't match."""
-        matches, _unknown = fuzzy_match_encoded_names(
-            "-tmp-test-project", "-tmp-test-different"
-        )
+        matches, _unknown = fuzzy_match_encoded_names("-tmp-test-project", "-tmp-test-different")
         assert not matches

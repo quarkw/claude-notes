@@ -1,8 +1,10 @@
 """Test Rich markup escaping in terminal formatter."""
 
-from claude_notes.formatters.terminal import TerminalFormatter
-from rich.console import Console
 from io import StringIO
+
+from rich.console import Console
+
+from claude_notes.formatters.terminal import TerminalFormatter
 
 
 def test_file_path_with_brackets_does_not_crash():
