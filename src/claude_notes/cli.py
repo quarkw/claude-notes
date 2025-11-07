@@ -199,27 +199,31 @@ def parse_start_time(time_str: str) -> datetime | None:
         return None
 
 
-def filter_by_time_range(conversations: list[dict], time_range: str | None) -> list[dict]:
-    """Filter conversations by time range.
+def filter_by_past(conversations: list[dict], past: str | None) -> list[dict]:
+    """Filter conversations by how far in the past to include.
 
     Args:
         conversations: List of conversation dictionaries with start_time
-        time_range: One of 'week', 'month', 'year', or None
+        past: One of 'hour', 'day', 'week', 'month', 'year', or None
 
     Returns:
         Filtered list of conversations
     """
-    if not time_range:
+    if not past:
         return conversations
 
     now = datetime.now(timezone.utc)
 
     # Define cutoff based on time range
-    if time_range == "week":
+    if past == "hour":
+        cutoff = now - timedelta(hours=1)
+    elif past == "day":
+        cutoff = now - timedelta(days=1)
+    elif past == "week":
         cutoff = now - timedelta(days=7)
-    elif time_range == "month":
+    elif past == "month":
         cutoff = now - timedelta(days=30)
-    elif time_range == "year":
+    elif past == "year":
         cutoff = now - timedelta(days=365)
     else:
         return conversations  # Unknown range, return all
@@ -292,9 +296,9 @@ def order_messages(messages: list, message_order: str) -> list:
     help="Minimum number of messages to include a conversation, after preprocessing (1 = include all)",
 )
 @click.option(
-    "--time-range",
-    type=click.Choice(["week", "month", "year"]),
-    help="Show only conversations from the specified time range",
+    "--past",
+    type=click.Choice(["hour", "day", "week", "month", "year"]),
+    help="Show only conversations from the specified time period",
 )
 def show(
     path: Path,
@@ -313,7 +317,7 @@ def show(
     emoji_fallbacks: bool,
     trim_warmup: bool,
     min_messages: int,
-    time_range: str | None,
+    past: str | None,
 ):
     """Show all conversations for a Claude project.
 
@@ -392,10 +396,10 @@ def show(
     )
 
     # Apply time-based filtering
-    if time_range:
-        conversations = filter_by_time_range(conversations, time_range)
+    if past:
+        conversations = filter_by_past(conversations, past)
         if not conversations:
-            console.print(f"[yellow]No conversations found in the last {time_range}[/yellow]")
+            console.print(f"[yellow]No conversations found in the past {past}[/yellow]")
             return
 
     if raw:

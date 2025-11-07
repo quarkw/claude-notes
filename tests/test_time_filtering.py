@@ -3,7 +3,37 @@
 
 from datetime import datetime, timedelta, timezone
 
-from claude_notes.cli import filter_by_time_range
+from claude_notes.cli import filter_by_past
+
+
+def test_filter_by_past_hour():
+    """Test filtering conversations from the past hour."""
+    now = datetime.now(timezone.utc)
+
+    conversations = [
+        {"start_time": now - timedelta(minutes=30), "info": {"file_name": "recent.jsonl"}},  # 30 minutes ago - include
+        {"start_time": now - timedelta(minutes=90), "info": {"file_name": "old.jsonl"}},  # 90 minutes ago - exclude
+        {"start_time": now - timedelta(hours=2), "info": {"file_name": "older.jsonl"}},  # 2 hours ago - exclude
+    ]
+
+    filtered = filter_by_past(conversations, "hour")
+    assert len(filtered) == 1
+    assert filtered[0]["info"]["file_name"] == "recent.jsonl"
+
+
+def test_filter_by_past_day():
+    """Test filtering conversations from the past day."""
+    now = datetime.now(timezone.utc)
+
+    conversations = [
+        {"start_time": now - timedelta(hours=12), "info": {"file_name": "recent.jsonl"}},  # 12 hours ago - include
+        {"start_time": now - timedelta(hours=30), "info": {"file_name": "old.jsonl"}},  # 30 hours ago - exclude
+        {"start_time": now - timedelta(days=2), "info": {"file_name": "older.jsonl"}},  # 2 days ago - exclude
+    ]
+
+    filtered = filter_by_past(conversations, "day")
+    assert len(filtered) == 1
+    assert filtered[0]["info"]["file_name"] == "recent.jsonl"
 
 
 def test_filter_last_week():
@@ -21,7 +51,7 @@ def test_filter_last_week():
         {"start_time": year_ago, "info": {"file_name": "old.jsonl"}},
     ]
 
-    filtered = filter_by_time_range(conversations, "week")
+    filtered = filter_by_past(conversations, "week")
     assert len(filtered) == 1
     assert filtered[0]["info"]["file_name"] == "recent.jsonl"
 
@@ -40,7 +70,7 @@ def test_filter_last_month():
         {"start_time": year_ago, "info": {"file_name": "old.jsonl"}},
     ]
 
-    filtered = filter_by_time_range(conversations, "month")
+    filtered = filter_by_past(conversations, "month")
     assert len(filtered) == 2  # Includes last week and last month
 
 
@@ -58,7 +88,7 @@ def test_filter_last_year():
         {"start_time": year_ago, "info": {"file_name": "old.jsonl"}},
     ]
 
-    filtered = filter_by_time_range(conversations, "year")
+    filtered = filter_by_past(conversations, "year")
     assert len(filtered) == 2  # Includes recent conversations, excludes very old
 
 
@@ -68,7 +98,7 @@ def test_filter_none_returns_all():
         {"start_time": datetime.now(timezone.utc), "info": {"file_name": "test.jsonl"}},
     ]
 
-    filtered = filter_by_time_range(conversations, None)
+    filtered = filter_by_past(conversations, None)
     assert len(filtered) == len(conversations)
 
 
@@ -83,6 +113,6 @@ def test_filter_handles_missing_timestamps():
     ]
 
     # Without timestamp, conversation is excluded from time filtering
-    filtered = filter_by_time_range(conversations, "week")
+    filtered = filter_by_past(conversations, "week")
     assert len(filtered) == 1
     assert filtered[0]["info"]["file_name"] == "recent.jsonl"
