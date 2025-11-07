@@ -1,7 +1,7 @@
 """CLI commands for claude-notes."""
 # ruff: noqa: UP017  # Use timezone.utc for Python <3.11 compatibility
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import click
@@ -199,6 +199,46 @@ def parse_start_time(time_str: str) -> datetime | None:
         return None
 
 
+def filter_by_time_range(conversations: list[dict], time_range: str | None) -> list[dict]:
+    """Filter conversations by time range.
+
+    Args:
+        conversations: List of conversation dictionaries with start_time
+        time_range: One of 'week', 'month', 'year', or None
+
+    Returns:
+        Filtered list of conversations
+    """
+    if not time_range:
+        return conversations
+
+    now = datetime.now(timezone.utc)
+
+    # Define cutoff based on time range
+    if time_range == "week":
+        cutoff = now - timedelta(days=7)
+    elif time_range == "month":
+        cutoff = now - timedelta(days=30)
+    elif time_range == "year":
+        cutoff = now - timedelta(days=365)
+    else:
+        return conversations  # Unknown range, return all
+
+    # Filter conversations after cutoff
+    filtered = []
+    for conv in conversations:
+        start_time = conv.get("start_time")
+        if start_time and isinstance(start_time, datetime):
+            # Ensure start_time is timezone-aware
+            if start_time.tzinfo is None:
+                start_time = start_time.replace(tzinfo=timezone.utc)
+
+            if start_time >= cutoff:
+                filtered.append(conv)
+
+    return filtered
+
+
 def order_messages(messages: list, message_order: str) -> list:
     """Order messages based on the specified order."""
     if message_order == "asc":
@@ -251,6 +291,11 @@ def order_messages(messages: list, message_order: str) -> list:
     default=1,
     help="Minimum number of messages to include a conversation, after preprocessing (1 = include all)",
 )
+@click.option(
+    "--time-range",
+    type=click.Choice(["week", "month", "year"]),
+    help="Show only conversations from the specified time range",
+)
 def show(
     path: Path,
     raw: bool,
@@ -268,6 +313,7 @@ def show(
     emoji_fallbacks: bool,
     trim_warmup: bool,
     min_messages: int,
+    time_range: str | None,
 ):
     """Show all conversations for a Claude project.
 
@@ -344,6 +390,13 @@ def show(
         key=lambda x: x["start_time"] or x["file_mtime"] or datetime.min.replace(tzinfo=timezone.utc),
         reverse=(session_order == "desc"),
     )
+
+    # Apply time-based filtering
+    if time_range:
+        conversations = filter_by_time_range(conversations, time_range)
+        if not conversations:
+            console.print(f"[yellow]No conversations found in the last {time_range}[/yellow]")
+            return
 
     if raw:
         # Display raw JSON data
