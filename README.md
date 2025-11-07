@@ -26,6 +26,8 @@ https://github.com/user-attachments/assets/e4cb9404-bdee-4a12-8e06-e1e2216b9165
 - Interactive pager for browsing long conversations
 - Project discovery - automatically finds Claude projects
 - **Smart project matching** - works with paths containing underscores, spaces, non-ASCII characters, and special characters
+- **Powerful filtering** - by message count, time period, with/without warmup messages
+- **Short flags** - convenient aliases for commonly used options
 - Humanized timestamps - shows "2 hours ago" instead of raw timestamps
 - Tool result formatting - properly displays Bash, Read, Edit, MultiEdit, and Grep tool usage
 - Navigation links - jump to specific messages in HTML output
@@ -55,11 +57,109 @@ uvx claude-notes show
 # View conversations for specific project path
 uvx claude-notes show /path/to/project
 
-# Disable pager (show all at once)
+# Disable pager (show all at once) - short flag available
 uvx claude-notes show --no-pager
+uvx claude-notes show -n
 
-# Show raw JSON data
+# Show raw JSON data - short flag available
 uvx claude-notes show --raw
+uvx claude-notes show -r
+```
+
+## Filtering Conversations
+
+Claude Notes supports powerful filtering to help you find relevant conversations:
+
+### By Conversation Length
+
+Filter by minimum number of messages using `--min-messages` (or `-M`):
+
+```bash
+# Show only conversations with 15+ messages
+uvx claude-notes show --min-messages 15
+uvx claude-notes show -M 15
+
+# Combine with other filters
+uvx claude-notes show -M 20 -p week
+```
+
+**What counts as a "message"?**
+
+A message is any non-meta communication between you and Claude. This includes:
+- Your requests and questions (user messages)
+- Claude's responses (assistant messages)
+
+This does NOT include:
+- Meta messages (internal system messages)
+- Warmup messages (Claude's initial greeting - removed by default)
+
+By default, warmup messages are excluded from the count. Use `--no-trim-warmup` to include them.
+
+### By Time Period
+
+Filter by recency using `--past` (or `-p`):
+
+```bash
+# Show conversations from the past hour
+uvx claude-notes show --past hour
+uvx claude-notes show -p hour
+
+# Show conversations from the past day
+uvx claude-notes show -p day
+
+# Show conversations from the past week
+uvx claude-notes show -p week
+
+# Show conversations from the past month
+uvx claude-notes show -p month
+
+# Show conversations from the past year
+uvx claude-notes show -p year
+```
+
+### Warmup Messages
+
+By default, Claude Notes removes Claude's initial warmup messages (the greeting before you start working). To keep them:
+
+```bash
+# Keep warmup messages
+uvx claude-notes show --no-trim-warmup
+```
+
+Note: There is no `--trim-warmup` flag because trimming is the default behavior.
+
+### Combining Filters
+
+All filters can be combined:
+
+```bash
+# Recent long conversations without warmup (default behavior)
+uvx claude-notes show --min-messages 20 --past month
+uvx claude-notes show -M 20 -p month
+
+# Show everything from the past week including warmup
+uvx claude-notes show --past week --no-trim-warmup
+```
+
+## Short Flags Reference
+
+For faster typing, most flags have short alternatives:
+
+| Long Flag | Short Flag | Description |
+|-----------|------------|-------------|
+| `--raw` | `-r` | Show raw JSON data |
+| `--no-pager` | `-n` | Disable pager |
+| `--format` | `-f` | Output format (terminal/html/animated) |
+| `--output` | `-o` | Output file path |
+| `--session-order` | `-s` | Session ordering (asc/desc) |
+| `--message-order` | `-m` | Message ordering (asc/desc) |
+| `--min-messages` | `-M` | Minimum message count filter |
+| `--past` | `-p` | Time period filter |
+
+Example using short flags:
+
+```bash
+uvx claude-notes show -f html -o output.html -M 15 -p week
 ```
 
 ## HTML Features
